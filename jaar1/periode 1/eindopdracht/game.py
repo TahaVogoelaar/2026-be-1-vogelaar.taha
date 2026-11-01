@@ -2,7 +2,7 @@ import curses
 import random
 import time
 
-# gemaakt met ai
+# table gemaakt met ai
 POKEMON = {
     "pikachu":    {"type": "electric", "hp": 35, "power": 12},
     "charmander": {"type": "fire",     "hp": 39, "power": 11},
@@ -16,7 +16,7 @@ POKEMON = {
     "mewtwo":     {"type": "psychic",  "hp": 50, "power": 16},
 }
 
-# gemaakt met ai help maar zelf geschreven
+# alleen met hulp van ai, alles zelf geschreven
 def drawTarget(stdscr, cursor, target):
     stdscr.erase()
     stdscr.border()
@@ -59,7 +59,7 @@ def drawTarget(stdscr, cursor, target):
     stdscr.refresh()
 
 
-# gemaakt met ai help maar zelf geschreven
+# alleen met hulp van ai, alles zelf geschreven
 def attack(stdscr):
     stdscr.nodelay(True)
     curses.curs_set(0)
@@ -112,21 +112,7 @@ def ask_name():
             return name
 
 
-def choose_pokemon2():
-    names = list(POKEMON.keys())
-    for i, n in enumerate(names, 1):
-        s = POKEMON[n]
-        print(f"{i:2}. {n.title():12} | {s['type']:10} {s['hp']} HP  {s['power']} pwr")
-    while True:
-        try:
-            c = int(input(f"Kies (1-{len(names)}): "))
-            if 1 <= c <= len(names):
-                return names[c-1]
-        except ValueError:
-            pass
-        print("Ongeldige keuze")
-
-# gemaakt met ai help maar zelf geschreven
+# de originele code was van het ai maar ik heb het opnieuw zelf geschreven
 def choose_pokemon():
     names = list(POKEMON.keys())
     for i, n in enumerate(names, 1):
@@ -142,12 +128,12 @@ def choose_pokemon():
         print("Ongeldige keuze")
 
 
+# de originele code was van het ai maar ik heb het opnieuw zelf geschreven
 def fight(p_name, p_stats, e_name, e_stats):
     p_hp = p_stats['hp']
     e_hp = e_stats['hp']
 
     print(p_name.title() + " vs " + e_name.title() + " ===")
-    print("Druk op SPATIE als de groene lijn de rode raakt!")
 
     while p_hp > 0 and e_hp > 0:
         # jouw aanval
@@ -172,23 +158,31 @@ def fight(p_name, p_stats, e_name, e_stats):
     print("Je bent verslagen door " + e_name.title() + "!")
     return False
 
-
+# de originele code was van het ai maar ik heb het opnieuw zelf geschreven
 def game_loop(name):
     p_name = choose_pokemon()
-    print(f"Je koos {p_name.title()}!")
+    print("Je koos " + p_name.title() + "!")
+
     while True:
         e_name = random.choice(list(POKEMON.keys()))
         e_stats = POKEMON[e_name]
-        print(f"\nEen wilde {e_name.title()} verschijnt! ({e_stats['hp']} HP, {e_stats['power']} pwr)")
-        if input("Wil je vechten? (j/n): ").strip().lower() != 'j':
+
+        print("\nEen wilde " + e_name.title() + " verschijnt! ("
+              + str(e_stats['hp']) + " HP, " + str(e_stats['power']) + " pwr)")
+
+        antwoord = input("Wil je vechten? (j/n): ").strip().lower()
+        if antwoord != 'j':
             print("Je vlucht weg.")
             continue
-        if fight(p_name, POKEMON[p_name], e_name, e_stats):
-            if input("Nog een gevecht? (j/n): ").strip().lower() != 'j':
-                print(f"Tot ziens, {name}!")
-                break
-        else:
+
+        gewonnen = fight(p_name, POKEMON[p_name], e_name, e_stats)
+        if not gewonnen:
             print("Game over!")
+            break
+
+        antwoord = input("Nog een gevecht? (j/n): ").strip().lower()
+        if antwoord != 'j':
+            print("Tot ziens, " + name + "!")
             break
 
 

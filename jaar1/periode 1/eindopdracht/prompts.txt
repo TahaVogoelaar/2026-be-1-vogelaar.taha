@@ -1,348 +1,266 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rotating Hexagon — Multiple Balls</title>
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-background: #0a0a1a;
-display: flex;
-justify-content: center;
-align-items: center;
-height: 100vh;
-overflow: hidden;
-}
-canvas {
-display: block;
-}
-</style>
-</head>
-<body>
-<canvas id="canvas"></canvas>
-<script>
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
+ik heb deepseek gebruikt inplaats van chatgpt en ik heb het voor syntax en kleine foutjes gebruikt
+DeepSeek gesprek 1 — Terminal graphics & curses
 
-// --- Sizing ---
-function resize() {
-const size = Math.min(window.innerWidth, window.innerHeight) * 0.9;
-canvas.width = size;
-canvas.height = size;
-}
-resize();
-window.addEventListener('resize', resize);
+user prompt 1:
 
-// --- Physics constants ---
-const HEX_RADIUS_RATIO = 0.38;
-const BALL_RADIUS_RATIO = 0.025;
-const GRAVITY = 980;
-const ANGULAR_VEL = 1.4;
-const SUB_STEPS = 10;
-const BALL_COLORS = [
-'#ff4757', '#2ed573', '#1e90ff', '#ffa502',
-'#ff6b81', '#7bed9f', '#70a1ff', '#ffda79',
-'#eccc68', '#a4b0be', '#ff7979', '#badc58'
-];
+python, i wanna try some cool terminal graphics that are simple. is there a way i can use the terminal as a drawing window?
 
-// --- State ---
-let hexRotation = 0;
-let balls = [];
-const NUM_BALLS = 6;
+deepseek:
+Gaf een overzicht van libraries: cligui-engine, terminedia, lighght/pycharming, rich-pixels en de ingebouwde curses module, met per optie voor/nadelen en installatie.
 
-// --- Helpers ---
-function hexRadius() { return canvas.width * HEX_RADIUS_RATIO; }
-function ballRadius() { return canvas.width * BALL_RADIUS_RATIO; }
+user prompt 2:
 
-function getHexVertices(cx, cy, radius, angle) {
-const verts = [];
-for (let i = 0; i < 6; i++) {
-const a = angle + (i * Math.PI) / 3;
-verts.push({
-x: cx + radius * Math.cos(a),
-y: cy + radius * Math.sin(a)
-});
-}
-return verts;
-}
+how to use curses
 
-function edgeNormal(x0, y0, x1, y1) {
-const dx = x1 - x0;
-const dy = y1 - y0;
-const len = Math.sqrt(dx * dx + dy * dy);
-return { x: dy / len, y: -dx / len };
-}
+deepseek:
+Uitleg over de basis: curses.wrapper() als gouden regel, stdscr en het double-buffer principe (addstr + refresh), tekenfuncties (addstr, border, hline, vline), kleuren (start_color, init_pair, color_pair), toetsinvoer (getch, keypad(True)) en een compleet werkend voorbeeld met een verplaatsbaar label.
 
-function pointToSegmentDist(px, py, x0, y0, x1, y1) {
-const dx = x1 - x0;
-const dy = y1 - y0;
-const lenSq = dx * dx + dy * dy;
-let t = ((px - x0) * dx + (py - y0) * dy) / lenSq;
-t = Math.max(0, Math.min(1, t));
-const closestX = x0 + t * dx;
-const closestY = y0 + t * dy;
-return {
-dist: Math.sqrt((px - closestX) ** 2 + (py - closestY) ** 2),
-closestX,
-closestY,
-t
-};
-}
+user prompt 3:
 
-function wallVelocity(px, py, cx, cy, omega) {
-return {
-vx: -omega * (py - cy),
-vy: omega * (px - cx)
-};
-}
+how to read windowsize
 
-// Ball-to-ball elastic collision
-function ballBallCollision(b1, b2, br) {
-const dx = b2.x - b1.x;
-const dy = b2.y - b1.y;
-const dist = Math.sqrt(dx * dx + dy * dy);
-const minDist = br * 2;
+deepseek:
+stdscr.getmaxyx() retourneert (height, width) — let op de volgorde. Behandelde ook getbegyx(), getparyx(), curses.LINES/COLS, het afvangen van KEY_RESIZE bij terminal-resize, en de valkuil dat schrijven naar de laatste cel (height-1, width-1) de terminal laat scrollen. Gaf een safe_addstr-wrapper om dat te voorkomen.
 
-if (dist < minDist && dist > 0.001) {
-const nx = dx / dist;
-const ny = dy / dist;
+user prompt 4:
 
-// Separate overlapping balls
-const overlap = minDist - dist;
-b1.x -= nx * overlap * 0.5;
-b1.y -= ny * overlap * 0.5;
-b2.x += nx * overlap * 0.5;
-b2.y += ny * overlap * 0.5;
+python random int generator
 
-// Elastic collision (equal mass)
-const dvx = b1.vx - b2.vx;
-const dvy = b1.vy - b2.vy;
-const dvDotN = dvx * nx + dvy * ny;
+deepseek:
+Overzicht van random.randint (inclusief beide uiteinden), random.randrange (exclusief stop), random.choice/choices/sample, weighted choices, secrets voor security-gevoelige getallen, reproducibility met random.Random(seed), en de numpy-equivalenten voor grote batches.
 
-if (dvDotN > 0) {
-b1.vx -= dvDotN * nx;
-b1.vy -= dvDotN * ny;
-b2.vx += dvDotN * nx;
-b2.vy += dvDotN * ny;
-}
-}
-}
+user prompt 5:
 
-// --- Physics step ---
-function physicsStep(dt) {
-const W = canvas.width;
-const H = canvas.height;
-const cx = W / 2;
-const cy = H / 2;
-const r = hexRadius();
-const br = ballRadius();
+python for loop
 
-const verts = getHexVertices(cx, cy, r, hexRotation);
+deepseek:
+Uitleg over itereren over iterables (geen C-style index loops), range(), enumerate(), zip() met strict=True, .items() voor dicts, de for…else clausule, break/continue/pass, comprehensions, reversed()/sorted(), en valkuilen zoals een lijst muteren tijdens itereren en het feit dat de loop-variabele na de loop blijft bestaan.
 
-// Integrate gravity for all balls
-for (const ball of balls) {
-ball.vy += GRAVITY * dt;
-ball.x += ball.vx * dt;
-ball.y += ball.vy * dt;
-}
+user prompt 6:
 
-// Ball-to-ball collisions
-for (let i = 0; i < balls.length; i++) {
-for (let j = i + 1; j < balls.length; j++) {
-ballBallCollision(balls[i], balls[j], br);
-}
-}
+[Code ingeleverd: maakRandomArray + eerste versie van de curses bar chart]
 
-// Hexagon wall collisions for all balls
-for (const ball of balls) {
-for (let i = 0; i < 6; i++) {
-const p0 = verts[i];
-const p1 = verts[(i + 1) % 6];
+deepseek:
+Wees op vier bugs: (1) addstr is (y, x, str) — rij eerst, kolom tweede, dus de balken werden verticaal getekend; (2) de binnenste loop liep over arrH in plaats van arr[x], dus de random hoogtes werden nooit gebruikt; (3) height - j begon op height (buiten bereik); (4) border() na het tekenen heeft geen effect — teken de rand eerst. Gaf een gecorrigeerde versie plus suggesties voor █-blokken en kleur.
 
-const result = pointToSegmentDist(ball.x, ball.y, p0.x, p0.y, p1.x, p1.y);
+user prompt 7:
 
-if (result.dist < br) {
-const n = edgeNormal(p0.x, p0.y, p1.x, p1.y);
+give me more █ like colors
 
-const toCenterX = cx - result.closestX;
-const toCenterY = cy - result.closestY;
-if (n.x * toCenterX + n.y * toCenterY < 0) {
-n.x = -n.x;
-n.y = -n.y;
-}
+deepseek:
+Volledige Unicode-block referentie: verticale achtsten (▁▂▃▄▅▆▇█) voor 8× verticale resolutie, halve blokken (▀▄▌▐) voor 2× horizontale, quadrants (▖▗▘▝▙…) voor fijner werk, shades (░▒▓) voor dithering, box-drawing tekens, en braille. Plus uitleg over de drie kleurniveaus van curses (8 basis, 256 xterm-palet, truecolor) met een rgb256()-helper en een regenboog-bar-chart voorbeeld.
 
-const wv = wallVelocity(result.closestX, result.closestY, cx, cy, ANGULAR_VEL);
+user prompt 8:
 
-const relVx = ball.vx - wv.vx;
-const relVy = ball.vy - wv.vy;
-const vn = relVx * n.x + relVy * n.y;
+can i draw colored text?
 
-if (vn < 0) {
-const relVnX = relVx - 2 * vn * n.x;
-const relVnY = relVy - 2 * vn * n.y;
+deepseek:
+Bevestigde dat en gaf de setup (start_color, use_default_colors, init_pair, addstr(..., curses.color_pair(n))). Behandelde per-teken kleuren via een loop, een Palette-class om pair-IDs te cachen (want curses.COLOR_PAIRS is gelimiteerd), attributen combineren met | (A_BOLD, A_UNDERLINE, A_REVERSE, etc.), en valkuilen zoals pair 0 die je niet kunt herdefiniëren.
 
-ball.vx = relVnX + wv.vx;
-ball.vy = relVnY + wv.vy;
-}
+user prompt 9:
 
-const penetration = br - result.dist;
-ball.x += n.x * (penetration + 0.5);
-ball.y += n.y * (penetration + 0.5);
-}
-}
-}
+smallest = arrGrab < smallest : 1 ? 2
 
-hexRotation += ANGULAR_VEL * dt;
-}
+deepseek:
+Wees erop dat dit C/JS-ternary-syntax is; Python gebruikt value_if_true if condition else value_if_false. Gaf de correcte vorm smallest = 1 if arrGrab < smallest else 2, maar waarschuwde dat als het doel "minimum bijhouden" is, je waarschijnlijk min(smallest, arrGrab) of if arrGrab < smallest: smallest = arrGrab bedoelt — de literal 1/2 is dan een bug.
 
-// --- Drawing ---
-function draw() {
-const W = canvas.width;
-const H = canvas.height;
-const cx = W / 2;
-const cy = H / 2;
+user prompt 10:
 
-ctx.fillStyle = '#0a0a1a';
-ctx.fillRect(0, 0, W, H);
+smallest = 1 if arr[j] < arr[smallest]
 
-// Draw trails for each ball
-for (let bi = 0; bi < balls.length; bi++) {
-const ball = balls[bi];
-const trail = ball.trail;
+deepseek:
+Wees erop dat de else ontbreekt; correcte vorm is smallest = j if arr[j] < arr[smallest] else smallest. Benadrukte dat smallest een index bijhoudt, dus de nieuwe waarde moet j zijn, niet 1. Gaf ook de Pythonische alternatieven min(range(len(arr)), key=arr.__getitem__) en min(arr).
 
-if (trail.length > 1) {
-for (let i = 1; i < trail.length; i++) {
-const alpha = (i / trail.length) * 0.5;
-const hue = (i / trail.length) * 40 + parseInt(ball.color.substr(1, 2), 16) % 360;
-ctx.beginPath();
-ctx.moveTo(trail[i - 1].x, trail[i - 1].y);
-ctx.lineTo(trail[i].x, trail[i].y);
-ctx.strokeStyle = hexWithAlpha(ball.color, alpha);
-ctx.lineWidth = 2;
-ctx.stroke();
-}
-}
-}
+user prompt 11:
 
-// Draw hexagon
-const verts = getHexVertices(cx, cy, hexRadius(), hexRotation);
+[Code ingeleverd: drawArr functie]
 
-ctx.shadowColor = '#00bfff';
-ctx.shadowBlur = 20;
+deepseek:
+Wees op de kapotte indentatie (de body van de buitenste for stond niet ingesprongen → IndentationError) en gaf de correcte versie. Stelde voor om column_height weg te laten (range(arr[x]) direct) en een char-parameter toe te voegen zodat de functie herbruikbaar is voor █, ░ en #. Waarschuwde ook dat arr[x] niet groter mag zijn dan height - 2, anders gaat addstr buiten bereik.
 
-ctx.beginPath();
-ctx.moveTo(verts[0].x, verts[0].y);
-for (let i = 1; i < 6; i++) {
-ctx.lineTo(verts[i].x, verts[i].y);
-}
-ctx.closePath();
+user prompt 12:
 
-ctx.strokeStyle = '#00bfff';
-ctx.lineWidth = 3;
-ctx.stroke();
+[Code ingeleverd: volledige selection sort visualizer met maakRandomArray, drawArr en de sorteer-loop]
 
-ctx.shadowBlur = 0;
-ctx.beginPath();
-ctx.moveTo(verts[0].x, verts[0].y);
-for (let i = 1; i < 6; i++) {
-ctx.lineTo(verts[i].x, verts[i].y);
-}
-ctx.closePath();
-ctx.strokeStyle = 'rgba(0, 191, 255, 0.3)';
-ctx.lineWidth = 8;
-ctx.stroke();
+deepseek:
+Vond drie bugs. De belangrijkste in de sorteercode:
 
-// Draw each ball
-for (const ball of balls) {
-const speed = Math.sqrt(ball.vx ** 2 + ball.vy ** 2);
-ctx.shadowColor = ball.color;
-ctx.shadowBlur = 12;
+smallest = 0 — should be smallest = i. Otherwise on iteration i > 0 you're searching the whole array again, including the already-sorted prefix. You'll end up swapping values back into the wrong place.
 
-ctx.beginPath();
-ctx.arc(ball.x, ball.y, ballRadius(), 0, Math.PI * 2);
-ctx.fillStyle = ball.color;
-ctx.fill();
+range(1, len(arr)) — should be range(i + 1, arrW). You never need to look at positions left of i — they're already sorted.
 
-ctx.shadowBlur = 0;
+Daarnaast: border() stond in main maar werd door erase() in drawArr gewist → border verplaatsen naar binnen drawArr, direct na erase(). En de eerste render werd meteen gewist door een overbodige erase()+border()+refresh() in main. Gaf de volledig gecorrigeerde code plus een optionele highlight-parameter om de huidige balk tijdens het sorteren te markeren.
 
-// Highlight
-const grad = ctx.createRadialGradient(
-ball.x - ballRadius() * 0.3, ball.y - ballRadius() * 0.3, 0,
-ball.x, ball.y, ballRadius()
-);
-grad.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
-grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-ctx.beginPath();
-ctx.arc(ball.x, ball.y, ballRadius(), 0, Math.PI * 2);
-ctx.fillStyle = grad;
-ctx.fill();
-}
-}
 
-function hexWithAlpha(hex, alpha) {
-const r = parseInt(hex.substr(1, 2), 16);
-const g = parseInt(hex.substr(3, 2), 16);
-const b = parseInt(hex.substr(5, 2), 16);
-return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
 
-// --- Init ---
-function init() {
-const W = canvas.width;
-const H = canvas.height;
-const cx = W / 2;
-const cy = H / 2;
-const r = hexRadius();
-const br = ballRadius();
 
-balls = [];
 
-// Distribute balls in a small cluster near the center-top area
-for (let i = 0; i < NUM_BALLS; i++) {
-const angle = (i / NUM_BALLS) * Math.PI * 2;
-const spread = br * 3;
-balls.push({
-x: cx + Math.cos(angle) * spread,
-y: cy - r * 0.5 + Math.sin(angle) * spread,
-vx: (Math.random() - 0.5) * 80,
-vy: Math.random() * 20,
-color: BALL_COLORS[i % BALL_COLORS.length],
-trail: [],
-trailLength: 40
-});
-}
-}
 
-// --- Main loop ---
-let lastTime = 0;
 
-function loop(timestamp) {
-if (!lastTime) lastTime = timestamp;
-let frameDt = (timestamp - lastTime) / 1000;
-lastTime = timestamp;
 
-frameDt = Math.min(frameDt, 1 / 30);
 
-const subDt = frameDt / SUB_STEPS;
-for (let i = 0; i < SUB_STEPS; i++) {
-physicsStep(subDt);
-}
 
-// Update trails
-for (const ball of balls) {
-ball.trail.push({ x: ball.x, y: ball.y });
-if (ball.trail.length > ball.trailLength) {
-ball.trail.shift();
-}
-}
 
-draw();
-requestAnimationFrame(loop);
-}
 
-init();
-requestAnimationFrame(loop);
-</script>
-</body>
-</html>
+
+
+DeepSeek gesprek 2
+Chatuitbreiding: DeepSeek chat (web)
+
+Prompt 1 — basis game-loop bouwen
+user prompt:
+
+can you take this and make a small game. keep your chances under 50 lines. i just want a loop where a random pokemon enemy appears and asks if you want to fight. than do the fighting sequance
+
+(bijgevoegd bestand: import curses.txt met de bestaande POKEMON-dict, drawTarget(), attack(), ask_name(), choose_pokemon() en een lege gamePlayLoop())
+
+deepseek:
+
+Ik heb je curses-timing minigame intact gelaten en alleen de game-loop eromheen gebouwd. Enige aanpassing aan je bestaande code: attack() print geen afstand meer en wacht niet op een extra toets — het retourneert nu gewoon de waarde.
+
+Toegevoegd/gewijzigd:
+
+attack(): print(hitPrecentage) en stdscr.getch() weggehaald, geeft nu return hitPrecentage.
+
+choose_pokemon(): uitgebreid van 2 naar alle 10 Pokémon uit POKEMON.
+
+gamePlayLoop() gesplitst in fight() + game_loop():
+
+fight() doet turn-based gevecht: jouw schade = power - distance//2, vijand slaat terug voor 1..power random.
+
+game_loop() kiest eenmalig je Pokémon, spawnt steeds een random wilde Pokémon, vraagt j/n, en roept fight() aan. Loopt tot je verliest of "n" zegt.
+
+main(): vraagt naam → start loop.
+
+Spelverloop: naam → Pokémon kiezen → wilde Pokémon verschijnt → j om te vechten, n om te vluchten → curses-venster opent (SPACE indrukken als groene lijn rode raakt) → turn-by-turn tot iemand flauwvalt → "Nog een gevecht?".
+
+Prompt 2 — print-statements simpeler maken
+user prompt:
+
+maak sommige dingen simpler zoals
+
+python
+print(f"{i:2}. {n.title():12} | {s['type']:10} {s['hp']} HP  {s['power']} pwr")
+deepseek:
+
+Hier is dezelfde code met de print-statements eenvoudiger gemaakt. Belangrijkste wijzigingen:
+
+choose_pokemon(): print(i, "-", n.title(), "|", s['type'], ...) in plaats van f-strings met :2, :12, :10 uitlijning.
+
+fight() en game_loop(): alle f"..." prints vervangen door gewone print("tekst", variabele, ...) met komma's.
+
+Kleine opschoningen:
+
+ch = "#" weg (stond er toch maar één keer).
+
+elif not cursorDir: → gewoon else:.
+
+hitPrecentage-variabele weg — attack() retourneert meteen abs(cursor - target).
+
+key = stdscr.getch() samengevoegd tot één if stdscr.getch() == ord(' '):.
+
+ask_name() gebruikt nu if name: in plaats van if name == "": / else.
+
+Spel werkt precies hetzelfde, alleen de output ziet er wat minder "tabel-achtig" uit.
+
+Prompt 3 — choose_pokemon() herschrijven in leesbare stijl
+user prompt:
+
+python
+def choose_pokemon():
+    names = list(POKEMON.keys())
+    for i, n in enumerate(names, 1):
+        s = POKEMON[n]
+        print(i + ". " + n.title + " | Stats: " + s['type'] + " HP: " + s['hp'] + " Power: " + s['power'])
+deepseek:
+
+Je versie heeft een paar foutjes:
+
+Two problems:
+
+n.title mist de haakjes → moet n.title() zijn. Anders print je de functie in plaats van de naam (zoiets als <built-in method title ...>).
+
+s['hp'] en s['power'] zijn integers, die kun je niet met + aan een string plakken → moet str(...) om heen.
+
+Hier is de werkende versie in jouw stijl:
+
+python
+def choose_pokemon():
+    names = list(POKEMON.keys())
+    for i, n in enumerate(names, 1):
+        s = POKEMON[n]
+        print(str(i) + ". " + n.title() + " | Stats: " + s['type']
+              + " HP: " + str(s['hp']) + " Power: " + str(s['power']))
+    while True:
+        try:
+            c = int(input("Kies een nummer: "))
+            if 1 <= c <= len(names):
+                return names[c-1]
+        except ValueError:
+            pass
+        print("Ongeldige keuze")
+Wat er veranderd is:
+
+n.title → n.title() — anders print je de functie in plaats van de naam.
+
+str(i), str(s['hp']), str(s['power']) — je kunt een int niet met + aan een str plakken.
+
+while-loop toegevoegd — anders retourneert de functie None en crasht je spel zodra je een Pokémon kiest.
+
+Alternatief: als je het str()-gedoe lelijk vindt, kun je ook komma's gebruiken in print() (die voegt automatisch spaties toe en maakt van elk argument tekst):
+
+python
+print(i, ".", n.title(), "| Stats:", s['type'],
+      "HP:", s['hp'], "Power:", s['power'])
+Prompt 4 — fight() in dezelfde leesbare stijl
+user prompt:
+
+maak fight ook zoon leesbare functie
+
+deepseek:
+
+Hier is fight() in dezelfde leesbare stijl als je choose_pokemon:
+
+python
+def fight(p_name, p_stats, e_name, e_stats):
+    p_hp = p_stats['hp']
+    e_hp = e_stats['hp']
+
+    print("\n=== " + p_name.title() + " vs " + e_name.title() + " ===")
+    print("Druk op SPATIE als de groene lijn de rode raakt!")
+
+    while p_hp > 0 and e_hp > 0:
+        # jouw aanval
+        dist = curses.wrapper(attack)
+        dmg = max(1, p_stats['power'] - dist // 2)
+        e_hp = e_hp - dmg
+        if e_hp < 0:
+            e_hp = 0
+        print("Je raakt " + e_name.title() + " voor " + str(dmg) + "! (vijand: " + str(e_hp) + " HP)")
+
+        if e_hp <= 0:
+            print("Je versloeg " + e_name.title() + "!")
+            return True
+
+        # vijand valt aan
+        edmg = random.randint(1, e_stats['power'])
+        p_hp = p_hp - edmg
+        if p_hp < 0:
+            p_hp = 0
+        print(e_name.title() + " raakt jou voor " + str(edmg) + "! (jij: " + str(p_hp) + " HP)")
+
+    print("Je bent verslagen door " + e_name.title() + "!")
+    return False
+Wat er veranderd is:
+
+Alle f"..." prints weg → nu "tekst " + str(getal) zoals jij het deed in choose_pokemon.
+
+str() om alle getallen die je aan een string plakt (dmg, e_hp, edmg, p_hp).
+
+e_hp -= dmg → e_hp = e_hp - dmg — iets duidelijker voor een beginner.
+
+HP wordt niet onder 0 geprint — ik zet e_hp en p_hp op 0 als ze negatief worden, anders zie je straks "vijand: -3 HP" in beeld.
+
+Commentaar erbij (# jouw aanval / # vijand valt aan) zodat je snel ziet welk blok wat doet.
+
+
