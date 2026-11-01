@@ -16,11 +16,15 @@ Reden: dit account mag geen repo's in `AventusCT` aanmaken. Zie "Waarom de org n
 Zelfde vorm als `frondend`: `jaar1..jaar4` × `periode 1..4`.
 
 ```
-jaar1/periode 1/eindopdracht/game.py      curses Pokémon-gevechtsspel
+jaar1/periode 1/eindopdracht/game.py      curses Pokémon-gevechtsspel (nieuwste versie)
 jaar1/periode 1/eindopdracht/niks.py      selection-sort visualisatie
-jaar1/periode 1/eindopdracht/prompts.txt  HTML/JS roterende hexagon (is HTML, ondanks .txt)
+jaar1/periode 1/eindopdracht/prompts.txt  AI-gebruik log (DeepSeek-gesprekken, 266 regels)
+jaar1/periode 1/eindopdracht/hexagon.html roterende hexagon (was prompts.txt; is HTML)
 jaar1..4/periode 2..4/.gitkeep            placeholders, want git bewaart geen lege mappen
+NOTITIES.md                               dit bestand
 ```
+
+Frontend en backend blijven gescheiden: eigen repo, eigen `jaar1..4`-bomen, geen gedeelde mappen.
 
 Keuze: `.gitkeep` in de lege periodes. `frondend` gebruikt daar lege `index.html` + `styles.css`;
 voor Python is `.gitkeep` neutraal omdat nog niet bekend is welke bestanden daar horen.
@@ -98,9 +102,11 @@ cd ~/teams && node index.mjs text <opdracht-url> python-eindopdracht   # → ~/t
       gh repo delete TahaVogoelaar/perm-probe-tmp --yes
       ```
 - [ ] Backend-repo naar `AventusCT` (zie route 1 of 2)
+- [x] `prompts.txt` (HTML) hernoemd naar `hexagon.html`
+- [x] Nieuwste `game.py` en DeepSeek-promptlog uit `backend/sdf/` opgenomen; lege `sdf/` opgeruimd
+- [x] `Functioneel Ontwerpen 7. Eindopdracht.odt` in de frontend-repo gecommit
 - [ ] Losse kopieën in `/home/taha/homework/` opruimen: `game.py`, `niks.py`, `prompts.txt`
-      (identiek aan de versie in `jaar1/periode 1/eindopdracht/`)
-- [ ] `prompts.txt` hernoemen naar `hexagon.html` — de inhoud is een complete HTML-pagina
+      (oude versies; de actuele staan in `jaar1/periode 1/eindopdracht/` en in de git-historie)
 - [ ] `game.py`: `choose_pokemon2` wordt nergens aangeroepen; `main()` draait op module-niveau
-- [ ] De nieuwere `game.py`-variant die even in `backend/sdf/` stond (andere commentaarregels,
-      Nederlandse variabelen) is niet bewaard — nakijken of die nog ergens staat
+- [ ] Let op: `backend/sdf/` komt terug als je daar opnieuw in schrijft — bestanden horen in
+      `jaar1/periode 1/eindopdracht/`, anders staan ze niet in de repo
